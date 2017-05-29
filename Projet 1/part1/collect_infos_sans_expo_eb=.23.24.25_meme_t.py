@@ -5,9 +5,9 @@ import Crypto.Util.number as number
 from math import sqrt
 from time import time
 HAMMING = [0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8]
-k_list = [256, 512, 1024, 2048, 4096]
-R_list = [10, 13, 16]
-E_list = [0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.16, 0.17, 0.18, 0.19, 0.20, 0.21, 0.22, 0.23, 0.24, 0.25, 0.26, 0.27, 0.28, 0.29, 0.30]
+k_list = [256]
+R_list = [10]
+E_list = [0.23, 0.24, 0.25]
 
 def fact(n):
     x=1
@@ -20,22 +20,7 @@ def combinaison(n,k):
     return fact(n)/(fact(k)*fact(n-k))
 
 def getT(k, R, eb):
-	for u in range(50):
-		t = 2*u+1
-		somme = 0
-		s = u+1
-		while s < t+1:
-			t1 = combinaison((2*u)+1, s)
-			t2 = eb**s
-			t3 = (1-eb)**(t-s)
-			somme += t1*t2*t3
-			s += 1
-		if (k+R)*somme < 2:
-			break
-	t = t - 2
-	if t < 2:
-		t = 3
-	return t
+	return 15
 
 def change_bit(N, l):
 	tmp = N
@@ -87,7 +72,7 @@ def genV(d, y, rand, eb):
 def getGama(k, R):
 	return (0.5*(k+R)) - 4*(sqrt((k+R)*0.25))
 
-log = open("collect_infos.txt", "w")
+log = open("collect_infos_sans_expo_eb=.23.24.25_meme_t.txt", "w")
 compteur_cat = 0
 for k in k_list:
 	for R in R_list:
@@ -109,6 +94,7 @@ for k in k_list:
 				classes = []
 				rand_v_i = []
 				nb_v = 0
+				nb_expo = 0
 				while finish == 0:
 					tour += 1
 					# tour
@@ -144,9 +130,14 @@ for k in k_list:
 						nb_v += 1
 					# "majority decision"
 					winner_class = classes[w]
-					classes.remove(winner_class)
+					#classes.remove(winner_class)
 					len_win_class = len(bin(max(winner_class)))-2
 					num_corr_1 = []
+					random_class = rand_v_i[w]
+					d_test = []
+					for i in random_class:
+						if (d+(i*y)) not in d_test:
+							d_test.append(d+(i*y))
 					V_tild = 0
 					i = 0
 					while i < len_win_class:
@@ -163,11 +154,9 @@ for k in k_list:
 						num_corr_1.append(b1)
 						i += 1
 					# "Verifing ..."
-					message = randint(2, 2**R)
-					cipher = squareAndMultiply(message, e, n)
-					message_verif = squareAndMultiply(cipher, V_tild, n)
 					stop = 0
-					if message == message_verif:
+					nb_expo += 1
+					if V_tild in d_test:
 						# "Found :)"
 						finish = 1
 						break
@@ -182,8 +171,8 @@ for k in k_list:
 							continue
 						pos = [i, -1, -1]
 						V_test = change_bit(V_tild, pos)
-						message_verif = squareAndMultiply(cipher, V_test, n)
-						if message == message_verif:
+						nb_expo += 1
+						if V_test in d_test:
 							stop = 1
 						i += 1
 					if stop == 1:
@@ -204,8 +193,8 @@ for k in k_list:
 								continue
 							pos = [i, j, -1]
 							V_test = change_bit(V_tild, pos)
-							message_verif = squareAndMultiply(cipher, V_test, n)
-							if message == message_verif:
+							nb_expo += 1
+							if V_test in d_test:
 								stop = 1
 							j += 1
 
@@ -236,8 +225,8 @@ for k in k_list:
 									continue
 								pos = [i, j, k_compteur]
 								V_test = change_bit(V_tild, pos)
-								message_verif = squareAndMultiply(cipher, V_test, n)
-								if message == message_verif:
+								nb_expo += 1
+								if V_test in d_test:
 									stop = 1
 								k_compteur += 1
 							j += 1
@@ -255,7 +244,7 @@ for k in k_list:
 						if test_val != r:
 							test_true = 0
 					true_class += test_true
-				ch = str(k)+"\t"+str(R)+"\t"+str(eb)+"\t"+"("+str(essai)+ " / 20)"+"\t"+str(calc_time)+"\t"+str(tour)+"\t"+str(nb_v)+"\t"+str(len(rand_v_i))+"\t"+str(true_class)+"\t"+str(len(r_val))
+				ch = "("+str(essai)+ " / 20)\t"+str(k)+"\t"+str(R)+"\t"+str(eb)+"\t"+str(t)+"\t"+str(calc_time)+"\t"+str(tour)+"\t"+str(nb_v)+"\t"+str(len(rand_v_i))+"\t"+str(true_class)+"\t"+str(len(r_val))+"\t"+str(nb_expo)
 				print ch
 				log.write(ch+"\n")
 			compteur_cat += 1
